@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Data Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .chart-container {
+            transition: all 0.5s ease;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        
+        .chart-container.animated {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .input-highlight {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+        
+        .tab-active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
+    <div class="container mx-auto px-4 py-12 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Interactive <span class="text-indigo-600">Data Visualizer</span></h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Transform your raw data into beautiful, interactive charts with custom animations and real-time updates.</p>
+            <div class="mt-6 floating">
+                <i class="fas fa-chart-line text-4xl text-indigo-400"></i>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-200">
+                <button class="tab-btn py-4 px-6 font-medium text-gray-600 hover:text-indigo-600 transition duration-300 tab-active" data-tab="data-input">
+                    <i class="fas fa-keyboard mr-2"></i> Data Input
+                </button>
+                <button class="tab-btn py-4 px-6 font-medium text-gray-600 hover:text-indigo-600 transition duration-300" data-tab="chart-settings">
+                    <i class="fas fa-sliders-h mr-2"></i> Chart Settings
+                </button>
+                <button class="tab-btn py-4 px-6 font-medium text-gray-600 hover:text-indigo-600 transition duration-300" data-tab="export-share">
+                    <i class="fas fa-share-alt mr-2"></i> Export
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="p-6 md:p-8">
+                <!-- Data Input Tab -->
+                <div id="data-input" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Data Entry Form -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Enter Your Data</h2>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Chart Title</label>
+                                <input type="text" id="chart-title" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" placeholder="My Awesome Chart">
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Chart Type</label>
+                                <select id="chart-type" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300">
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="line">Line Chart</option>
+                                    <option value="pie">Pie Chart</option>
+                                    <option value="doughnut">Doughnut Chart</option>
+                                    <option value="radar">Radar Chart</option>
+                                    <option value="polarArea">Polar Area Chart</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Data Labels (comma separated)</label>
+                                <input type="text" id="data-labels" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" placeholder="Jan, Feb, Mar, Apr">
+                                <p class="text-sm text-gray-500 mt-1">Enter labels for each data point (e.g., months, categories)</p>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Dataset Values (comma separated)</label>
+                                <input type="text" id="data-values" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" placeholder="10, 20, 30, 40">
+                                <p class="text-sm text-gray-500 mt-1">Enter numerical values corresponding to each label</p>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Dataset Label</label>
+                                <input type="text" id="dataset-label" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" placeholder="Sales 2023">
+                            </div>
+                            
+                            <div class="flex space-x-4">
+                                <button id="generate-chart" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-300 btn-glow flex items-center">
+                                    <i class="fas fa-magic mr-2"></i> Generate Chart
+                                </button>
+                                <button id="random-data" class="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg font-medium hover:bg-indigo-50 transition duration-300 flex items-center">
+                                    <i class="fas fa-random mr-2"></i> Random Data
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Preview -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Preview</h2>
+                            <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="font-medium text-gray-700">Labels:</span>
+                                    <span id="labels-preview" class="text-gray-600">Not entered yet</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="font-medium text-gray-700">Values:</span>
+                                    <span id="values-preview" class="text-gray-600">Not entered yet</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-700">Dataset:</span>
+                                    <span id="dataset-preview" class="text-gray-600">Not entered yet</span>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-indigo-50 p-6 rounded-lg">
+                                <h3 class="font-bold text-indigo-800 mb-3">Quick Tips</h3>
+                                <ul class="space-y-2 text-indigo-700">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check-circle mt-1 mr-2 text-indigo-500"></i>
+                                        <span>Use commas to separate multiple values</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check-circle mt-1 mr-2 text-indigo-500"></i>
+                                        <span>Numbers only for values (decimals allowed)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-check-circle mt-1 mr-2 text-indigo-500"></i>
+                                        <span>Try different chart types for the same data</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart Settings Tab -->
+                <div id="chart-settings" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Appearance Settings -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Chart Appearance</h2>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Color Scheme</label>
+                                <select id="color-scheme" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300">
+                                    <option value="default">Default (Indigo)</option>
+                                    <option value="rainbow">Rainbow</option>
+                                    <option value="pastel">Pastel</option>
+                                    <option value="warm">Warm Tones</option>
+                                    <option value="cool">Cool Tones</option>
+                                    <option value="mono">Monochrome</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Background Color</label>
+                                <input type="color" id="bg-color" value="#ffffff" class="w-16 h-10 cursor-pointer">
+                                <span id="bg-color-value" class="ml-2 text-gray-600">#ffffff</span>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Animation Style</label>
+                                <select id="animation-style" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300">
+                                    <option value="fade">Fade In</option>
+                                    <option value="bounce">Bounce</option>
+                                    <option value="zoom">Zoom</option>
+                                    <option value="flip">Flip</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="show-grid" class="rounded text-indigo-600 focus:ring-indigo-500" checked>
+                                    <span class="ml-2 text-gray-700">Show Grid Lines</span>
+                                </label>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="show-legend" class="rounded text-indigo-600 focus:ring-indigo-500" checked>
+                                    <span class="ml-2 text-gray-700">Show Legend</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Settings -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Advanced Settings</h2>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Border Width</label>
+                                <input type="range" id="border-width" min="0" max="10" value="1" class="w-full">
+                                <span id="border-width-value" class="text-gray-600">1 px</span>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Border Radius (Bar Charts)</label>
+                                <input type="range" id="border-radius" min="0" max="50" value="5" class="w-full">
+                                <span id="border-radius-value" class="text-gray-600">5 px</span>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Animation Duration (ms)</label>
+                                <input type="range" id="animation-duration" min="500" max="3000" step="100" value="1000" class="w-full">
+                                <span id="animation-duration-value" class="text-gray-600">1000 ms</span>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-gray-700 font-medium mb-2">Hover Effect</label>
+                                <select id="hover-effect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300">
+                                    <option value="highlight">Highlight</option>
+                                    <option value="grow">Grow</option>
+                                    <option value="shrink">Shrink</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                            
+                            <button id="apply-settings" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition duration-300 btn-glow flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i> Apply Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Export/Share Tab -->
+                <div id="export-share" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Export Options -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Export Chart</h2>
+                            
+                            <div class="space-y-4">
+                                <button id="export-png" class="w-full bg-white border border-gray-300 px-6 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300 flex items-center justify-between">
+                                    <span>Download as PNG</span>
+                                    <i class="fas fa-download text-indigo-600"></i>
+                                </button>
+                                
+                                <button id="export-jpg" class="w-full bg-white border border-gray-300 px-6 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300 flex items-center justify-between">
+                                    <span>Download as JPG</span>
+                                    <i class="fas fa-download text-indigo-600"></i>
+                                </button>
+                                
+                                <button id="export-svg" class="w-full bg-white border border-gray-300 px-6 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300 flex items-center justify-between">
+                                    <span>Download as SVG</span>
+                                    <i class="fas fa-download text-indigo-600"></i>
+                                </button>
+                                
+                                <button id="export-pdf" class="w-full bg-white border border-gray-300 px-6 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300 flex items-center justify-between">
+                                    <span>Download as PDF</span>
+                                    <i class="fas fa-file-pdf text-indigo-600"></i>
+                                </button>
+                                
+                                <div class="pt-4">
+                                    <label class="block text-gray-700 font-medium mb-2">Image Quality</label>
+                                    <input type="range" id="image-quality" min="0.1" max="1" step="0.1" value="1" class="w-full">
+                                    <span id="image-quality-value" class="text-gray-600">100%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Share Options -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Share Chart</h2>
+                            
+                            <div class="space-y-4">
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 font-medium mb-2">Shareable Link</label>
+                                    <div class="flex">
+                                        <input type="text" id="share-link" class="flex-grow px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300" readonly>
+                                        <button id="copy-link" class="bg-indigo-600 text-white px-4 py-3 rounded-r-lg hover:bg-indigo-700 transition duration-300">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label class="block text-gray-700 font-medium mb-2">Embed Code</label>
+                                    <textarea id="embed-code" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 h-24" readonly></textarea>
+                                </div>
+                                
+                                <div>
+                                    <h3 class="font-bold text-gray-800 mb-3">Share on Social Media</h3>
+                                    <div class="flex space-x-4">
+                                        <button class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition duration-300">
+                                            <i class="fab fa-twitter"></i>
+                                        </button>
+                                        <button class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center hover:bg-blue-800 transition duration-300">
+                                            <i class="fab fa-facebook-f"></i>
+                                        </button>
+                                        <button class="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 transition duration-300">
+                                            <i class="fab fa-pinterest-p"></i>
+                                        </button>
+                                        <button class="w-10 h-10 bg-blue-400 text-white rounded-full flex items-center justify-center hover:bg-blue-500 transition duration-300">
+                                            <i class="fab fa-linkedin-in"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chart Display Area -->
+        <div class="mt-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Your <span class="text-indigo-600">Visualization</span></h2>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="chart-container mx-auto" style="max-width: 800px; height: 500px;">
+                    <canvas id="data-chart"></canvas>
+                </div>
+                
+                <div id="chart-placeholder" class="text-center py-16">
+                    <i class="fas fa-chart-pie text-5xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-medium text-gray-500">No chart generated yet</h3>
+                    <p class="text-gray-400 mt-2">Enter your data and click "Generate Chart" to visualize it</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sample Data Section -->
+        <div class="mt-16 bg-indigo-50 rounded-xl p-8">
+            <h2 class="text-2xl font-bold text-center text-indigo-800 mb-6">Try These Sample Datasets</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition duration-300" onclick="loadSampleData(1)">
+                    <h3 class="font-bold text-gray-800 mb-3">Quarterly Sales</h3>
+                    <p class="text-gray-600 mb-3">Labels: Q1, Q2, Q3, Q4</p>
+                    <p class="text-gray-600">Values: 125, 180, 210, 195</p>
+                    <div class="mt-4 text-indigo-600 text-sm font-medium">
+                        <i class="fas fa-chart-bar mr-1"></i> Best with Bar/Line
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition duration-300" onclick="loadSampleData(2)">
+                    <h3 class="font-bold text-gray-800 mb-3">Market Share</h3>
+                    <p class="text-gray-600 mb-3">Labels: Apple, Samsung, Huawei, Others</p>
+                    <p class="text-gray-600">Values: 45, 30, 15, 10</p>
+                    <div class="mt-4 text-indigo-600 text-sm font-medium">
+                        <i class="fas fa-chart-pie mr-1"></i> Best with Pie/Doughnut
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition duration-300" onclick="loadSampleData(3)">
+                    <h3 class="font-bold text-gray-800 mb-3">Skill Ratings</h3>
+                    <p class="text-gray-600 mb-3">Labels: JS, Python, Java, C#, PHP</p>
+                    <p class="text-gray-600">Values: 9, 7, 6, 5, 4</p>
+                    <div class="mt-4 text-indigo-600 text-sm font-medium">
+                        <i class="fas fa-chart-line mr-1"></i> Best with Radar/Line
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-20">
+        <div class="container mx-auto px-4 text-center">
+            <h3 class="text-2xl font-bold mb-4">Interactive Data Visualizer</h3>
+            <p class="text-gray-400 max-w-2xl mx-auto mb-8">Transform your data into beautiful, interactive visualizations with custom animations and real-time updates.</p>
+            
+            <div class="flex justify-center space-x-6 mb-8">
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                    <i class="fab fa-linkedin text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                    <i class="fab fa-codepen text-xl"></i>
+                </a>
+            </div>
+            
+            <p class="text-gray-500 text-sm">Built with <i class="fas fa-heart text-red-400"></i> using Chart.js and Tailwind CSS</p>
+            <p class="text-gray-500 text-sm mt-2">© 2023 Data Visualizer. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const chartCanvas = document.getElementById('data-chart');
+        const chartPlaceholder = document.getElementById('chart-placeholder');
+        const generateBtn = document.getElementById('generate-chart');
+        const randomDataBtn = document.getElementById('random-data');
+        const applySettingsBtn = document.getElementById('apply-settings');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Chart variables
+        let myChart = null;
+        let chartData = {
+            labels: [],
+            datasets: [{
+                label: '',
+                data: [],
+                backgroundColor: [],
+                borderColor: [],
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        };
+        
+        let chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'My Chart',
+                    font: {
+                        size: 20
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 30
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12
+                        },
+                        padding: 20
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuad'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        };
+        
+        // Color schemes
+        const colorSchemes = {
+            default: {
+                bg: ['rgba(99, 102, 241, 0.7)', 'rgba(79, 70, 229, 0.7)', 'rgba(129, 140, 248, 0.7)', 'rgba(165, 180, 252, 0.7)'],
+                border: ['rgba(99, 102, 241, 1)', 'rgba(79, 70, 229, 1)', 'rgba(129, 140, 248, 1)', 'rgba(165, 180, 252, 1)']
+            },
+            rainbow: {
+                bg: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'],
+                border: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)']
+            },
+            pastel: {
+                bg: ['rgba(255, 183, 178, 0.7)', 'rgba(178, 235, 242, 0.7)', 'rgba(252, 228, 236, 0.7)', 'rgba(222, 235, 255, 0.7)', 'rgba(214, 245, 214, 0.7)'],
+                border: ['rgba(255, 183, 178, 1)', 'rgba(178, 235, 242, 1)', 'rgba(252, 228, 236, 1)', 'rgba(222, 235, 255, 1)', 'rgba(214, 245, 214, 1)']
+            },
+            warm: {
+                bg: ['rgba(255, 99, 71, 0.7)', 'rgba(255, 165, 0, 0.7)', 'rgba(255, 215, 0, 0.7)', 'rgba(218, 165, 32, 0.7)', 'rgba(210, 105, 30, 0.7)'],
+                border: ['rgba(255, 99, 71, 1)', 'rgba(255, 165, 0, 1)', 'rgba(255, 215, 0, 1)', 'rgba(218, 165, 32, 1)', 'rgba(210, 105, 30, 1)']
+            },
+            cool: {
+                bg: ['rgba(64, 224, 208, 0.7)', 'rgba(70, 130, 180, 0.7)', 'rgba(123, 104, 238, 0.7)', 'rgba(106, 90, 205, 0.7)', 'rgba(72, 61, 139, 0.7)'],
+                border: ['rgba(64, 224, 208, 1)', 'rgba(70, 130, 180, 1)', 'rgba(123, 104, 238, 1)', 'rgba(106, 90, 205, 1)', 'rgba(72, 61, 139, 1)']
+            },
+            mono: {
+                bg: ['rgba(96, 96, 96, 0.7)', 'rgba(128, 128, 128, 0.7)', 'rgba(160, 160, 160, 0.7)', 'rgba(192, 192, 192, 0.7)', 'rgba(224, 224, 224, 0.7)'],
+                border: ['rgba(96, 96, 96, 1)', 'rgba(128, 128, 128, 1)', 'rgba(160, 160, 160, 1)', 'rgba(192, 192, 192, 1)', 'rgba(224, 224, 224, 1)']
+            }
+        };
+        
+        // Animation presets
+        const animationPresets = {
+            fade: {
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuad',
+                    opacity: {
+                        from: 0,
+                        to: 1
+                    }
+                }
+            },
+            bounce: {
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutBounce',
+                    y: {
+                        from: -100,
+                        to: 0
+                    }
+                }
+            },
+            zoom: {
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                    scale: {
+                        from: 0,
+                        to: 1
+                    }
+                }
+            },
+            flip: {
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                    rotateX: {
+                        from: 90,
+                        to: 0
+                    }
+                }
+            },
+            none: {
+                animation: {
+                    duration: 0
+                }
+            }
+        };
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Initialize range inputs
+            initRangeInputs();
+            
+            // Initialize chart container animation
+            animateChartContainer();
+            
+            // Update data preview
+            updateDataPreview();
+        });
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Generate chart button
+            generateBtn.addEventListener('click', generateChart);
+            
+            // Random data button
+            randomDataBtn.addEventListener('click', generateRandomData);
+            
+            // Apply settings button
+            applySettingsBtn.addEventListener('click', applyChartSettings);
+            
+            // Tab navigation
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+            
+            // Input fields that update the preview
+            document.getElementById('data-labels').addEventListener('input', updateDataPreview);
+            document.getElementById('data-values').addEventListener('input', updateDataPreview);
+            document.getElementById('dataset-label').addEventListener('input', updateDataPreview);
+            
+            // Color scheme change
+            document.getElementById('color-scheme').addEventListener('change', function() {
+                if (myChart) {
+                    applyColorScheme(this.value);
+                }
+            });
+            
+            // Background color change
+            document.getElementById('bg-color').addEventListener('input', function() {
+                document.getElementById('bg-color-value').textContent = this.value;
+                if (myChart) {
+                    applyBackgroundColor(this.value);
+                }
+            });
+            
+            // Export buttons
+            document.getElementById('export-png').addEventListener('click', () => exportChart('png'));
+            document.getElementById('export-jpg').addEventListener('click', () => exportChart('jpg'));
+            document.getElementById('export-svg').addEventListener('click', () => exportChart('svg'));
+            document.getElementById('export-pdf').addEventListener('click', () => exportChart('pdf'));
+            
+            // Copy share link
+            document.getElementById('copy-link').addEventListener('click', copyShareLink);
+            
+            // Image quality range
+            document.getElementById('image-quality').addEventListener('input', function() {
+                document.getElementById('image-quality-value').textContent = `${Math.round(this.value * 100)}%`;
+            });
+        }
+        
+        // Initialize range inputs
+        function initRangeInputs() {
+            // Border width
+            const borderWidthInput = document.getElementById('border-width');
+            borderWidthInput.addEventListener('input', function() {
+                document.getElementById('border-width-value').textContent = `${this.value} px`;
+            });
+            
+            // Border radius
+            const borderRadiusInput = document.getElementById('border-radius');
+            borderRadiusInput.addEventListener('input', function() {
+                document.getElementById('border-radius-value').textContent = `${this.value} px`;
+            });
+            
+            // Animation duration
+            const animationDurationInput = document.getElementById('animation-duration');
+            animationDurationInput.addEventListener('input', function() {
+                document.getElementById('animation-duration-value').textContent = `${this.value} ms`;
+            });
+        }
+        
+        // Animate chart container when in view
+        function animateChartContainer() {
+            const chartContainer = document.querySelector('.chart-container');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            observer.observe(chartContainer);
+        }
+        
+        // Update data preview
+        function updateDataPreview() {
+            const labels = document.getElementById('data-labels').value;
+            const values = document.getElementById('data-values').value;
+            const dataset = document.getElementById('dataset-label').value;
+            
+            document.getElementById('labels-preview').textContent = labels || 'Not entered yet';
+            document.getElementById('values-preview').textContent = values || 'Not entered yet';
+            document.getElementById('dataset-preview').textContent = dataset || 'Not entered yet';
+        }
+        
+        // Generate chart
+        function generateChart() {
+            // Get input values
+            const title = document.getElementById('chart-title').value || 'My Chart';
+            const type = document.getElementById('chart-type').value;
+            const labels = document.getElementById('data-labels').value.split(',').map(label => label.trim());
+            const values = document.getElementById('data-values').value.split(',').map(value => parseFloat(value.trim()));
+            const datasetLabel = document.getElementById('dataset-label').value || 'Dataset';
+            
+            // Validate data
+            if (labels.length === 0 || values.length === 0 || labels.length !== values.length) {
+                alert('Please enter valid data. Number of labels and values should match.');
+                return;
+            }
+            
+            // Prepare chart data
+            chartData.labels = labels;
+            chartData.datasets[0].label = datasetLabel;
+            chartData.datasets[0].data = values;
+            
+            // Apply color scheme
+            const colorScheme = document.getElementById('color-scheme').value;
+            applyColorScheme(colorScheme);
+            
+            // Set chart title
+            chartOptions.plugins.title.text = title;
+            
+            // Hide placeholder and show chart
+            chartPlaceholder.style.display = 'none';
+            chartCanvas.style.display = 'block';
+            
+            // Destroy previous chart if exists
+            if (myChart) {
+                myChart.destroy();
+            }
+            
+            // Create new chart
+            const ctx = chartCanvas.getContext('2d');
+            myChart = new Chart(ctx, {
+                type: type,
+                data: chartData,
+                options: chartOptions
+            });
+            
+            // Apply animation style
+            const animationStyle = document.getElementById('animation-style').value;
+            applyAnimationStyle(animationStyle);
+            
+            // Apply background color
+            const bgColor = document.getElementById('bg-color').value;
+            applyBackgroundColor(bgColor);
+            
+            // Update share link and embed code
+            updateShareOptions();
+        }
+        
+        // Apply color scheme
+        function applyColorScheme(scheme) {
+            if (!myChart) return;
+            
+            const colors = colorSchemes[scheme] || colorSchemes.default;
+            const dataset = myChart.data.datasets[0];
+            
+            // For charts with multiple data points (pie, doughnut, etc.)
+            if (['pie', 'doughnut', 'polarArea', 'radar'].includes(myChart.config.type)) {
+                dataset.backgroundColor = [];
+                dataset.borderColor = [];
+                
+                for (let i = 0; i < myChart.data.labels.length; i++) {
+                    const colorIndex = i % colors.bg.length;
+                    dataset.backgroundColor.push(colors.bg[colorIndex]);
+                    dataset.borderColor.push(colors.border[colorIndex]);
+                }
+            } else {
+                // For bar/line charts
+                dataset.backgroundColor = colors.bg[0];
+                dataset.borderColor = colors.border[0];
+            }
+            
+            myChart.update();
+        }
+        
+        // Apply background color
+        function applyBackgroundColor(color) {
+            if (!myChart) return;
+            
+            // Convert hex to rgba
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            
+            myChart.options.plugins.legend.labels.color = `rgb(${255 - r}, ${255 - g}, ${255 - b})`;
+            myChart.options.plugins.title.color = `rgb(${255 - r}, ${255 - g}, ${255 - b})`;
+            myChart.options.scales.x.grid.color = `rgba(${255 - r}, ${255 - g}, ${255 - b}, 0.1)`;
+            myChart.options.scales.y.grid.color = `rgba(${255 - r}, ${255 - g}, ${255 - b}, 0.1)`;
+            
+            // Set canvas background
+            chartCanvas.style.backgroundColor = color;
+            myChart.update();
+        }
+        
+        // Apply animation style
+        function applyAnimationStyle(style) {
+            if (!myChart) return;
+            
+            const preset = animationPresets[style] || animationPresets.fade;
+            Object.assign(myChart.options.animation, preset.animation);
+            
+            // Special case for none - disable all animations
+            if (style === 'none') {
+                myChart.options.animation = { duration: 0 };
+            }
+            
+            myChart.update();
+        }
+        
+        // Apply chart settings
+        function applyChartSettings() {
+            if (!myChart) return;
+            
+            // Border width
+            const borderWidth = parseInt(document.getElementById('border-width').value);
+            myChart.data.datasets[0].borderWidth = borderWidth;
+            
+            // Border radius (for bar charts)
+            if (myChart.config.type === 'bar') {
+                const borderRadius = parseInt(document.getElementById('border-radius').value);
+                myChart.data.datasets[0].borderRadius = borderRadius;
+            }
+            
+            // Animation duration
+            const animationDuration = parseInt(document.getElementById('animation-duration').value);
+            myChart.options.animation.duration = animationDuration;
+            
+            // Show/hide grid
+            const showGrid = document.getElementById('show-grid').checked;
+            myChart.options.scales.x.grid.display = showGrid;
+            myChart.options.scales.y.grid.display = showGrid;
+            
+            // Show/hide legend
+            const showLegend = document.getElementById('show-legend').checked;
+            myChart.options.plugins.legend.display = showLegend;
+            
+            // Hover effect
+            const hoverEffect = document.getElementById('hover-effect').value;
+            // This would require more complex interaction handling
+            
+            myChart.update();
+        }
+        
+        // Generate random data
+        function generateRandomData() {
+            const chartTypes = ['bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea'];
+            const randomType = chartTypes[Math.floor(Math.random() * chartTypes.length)];
+            
+            const sampleLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+            const randomCount = Math.floor(Math.random() * 5) + 3; // 3-7 items
+            const labels = sampleLabels.slice(0, randomCount);
+            
+            const values = [];
+            for (let i = 0; i < randomCount; i++) {
+                values.push(Math.floor(Math.random() * 100) + 10);
+            }
+            
+            const sampleTitles = ['Sales Report', 'Website Traffic', 'User Engagement', 'Revenue Growth', 'Market Share'];
+            const randomTitle = sampleTitles[Math.floor(Math.random() * sampleTitles.length)];
+            
+            const sampleDatasets = ['Monthly Data', 'Quarterly Results', 'Performance Metrics', 'Analytics Data'];
+            const randomDataset = sampleDatasets[Math.floor(Math.random() * sampleDatasets.length)];
+            
+            // Set the values in the form
+            document.getElementById('chart-title').value = randomTitle;
+            document.getElementById('chart-type').value = randomType;
+            document.getElementById('data-labels').value = labels.join(', ');
+            document.getElementById('data-values').value = values.join(', ');
+            document.getElementById('dataset-label').value = randomDataset;
+            
+            // Update preview
+            updateDataPreview();
+            
+            // Random color scheme
+            const schemes = Object.keys(colorSchemes);
+            const randomScheme = schemes[Math.floor(Math.random() * schemes.length)];
+            document.getElementById('color-scheme').value = randomScheme;
+            
+            // Generate the chart
+            generateChart();
+        }
+        
+        // Load sample data
+        function loadSampleData(index) {
+            const samples = [
+                {
+                    title: 'Quarterly Sales',
+                    type: 'bar',
+                    labels: 'Q1, Q2, Q3, Q4',
+                    values: '125, 180, 210, 195',
+                    dataset: 'Sales 2023',
+                    scheme: 'default'
+                },
+                {
+                    title: 'Market Share',
+                    type: 'pie',
+                    labels: 'Apple, Samsung, Huawei, Others',
+                    values: '45, 30, 15, 10',
+                    dataset: 'Smartphone Market',
+                    scheme: 'rainbow'
+                },
+                {
+                    title: 'Skill Ratings',
+                    type: 'radar',
+                    labels: 'JS, Python, Java, C#, PHP',
+                    values: '9, 7, 6, 5, 4',
+                    dataset: 'Programming Skills',
+                    scheme: 'cool'
+                }
+            ];
+            
+            const sample = samples[index - 1];
+            
+            // Set the values in the form
+            document.getElementById('chart-title').value = sample.title;
+            document.getElementById('chart-type').value = sample.type;
+            document.getElementById('data-labels').value = sample.labels;
+            document.getElementById('data-values').value = sample.values;
+            document.getElementById('dataset-label').value = sample.dataset;
+            document.getElementById('color-scheme').value = sample.scheme;
+            
+            // Update preview
+            updateDataPreview();
+            
+            // Generate the chart
+            generateChart();
+        }
+        
+        // Switch tabs
+        function switchTab(tabId) {
+            // Update active tab button
+            tabBtns.forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.add('tab-active');
+                } else {
+                    btn.classList.remove('tab-active');
+                }
+            });
+            
+            // Show selected tab content
+            tabContents.forEach(content => {
+                if (content.id === tabId) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Export chart
+        function exportChart(format) {
+            if (!myChart) {
+                alert('Please generate a chart first.');
+                return;
+            }
+            
+            const quality = parseFloat(document.getElementById('image-quality').value);
+            const image = myChart.toBase64Image(`image/${format}`, quality);
+            
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `chart.${format}`;
+            link.click();
+        }
+        
+        // Update share options
+        function updateShareOptions() {
+            if (!myChart) return;
+            
+            // Generate a simple share link (in a real app, this would encode the chart data)
+            const shareLink = `${window.location.origin}${window.location.pathname}?chart=shared`;
+            document.getElementById('share-link').value = shareLink;
+            
+            // Generate embed code
+            const embedCode = `<iframe src="${shareLink}" width="800" height="500" frameborder="0" style="border:0"></iframe>`;
+            document.getElementById('embed-code').value = embedCode;
+        }
+        
+        // Copy share link
+        function copyShareLink() {
+            const shareLink = document.getElementById('share-link');
+            shareLink.select();
+            document.execCommand('copy');
+            
+            // Show tooltip or notification
+            const copyBtn = document.getElementById('copy-link');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
