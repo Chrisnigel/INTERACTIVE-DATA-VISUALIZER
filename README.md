@@ -21,7 +21,7 @@ No Backend: Runs entirely in the browser
 
 Just open the interactive data visualizer.html file in your browser—no server or dependencies needed!
 
-🌟 Features to Add (Ideas)
+🌟 Features to Add (Ideas).
 🗂 Drag & drop file uploads
 
 📤 Export graphs as images or PDFs
