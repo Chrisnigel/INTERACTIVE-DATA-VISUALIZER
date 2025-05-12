@@ -19,23 +19,6 @@ Libraries: Chart.js (or other charting library if used)
 
 No Backend: Runs entirely in the browser
 
-📁 Files
-bash
-Copy
-Edit
-INTERACTIVE-DATA-VISUALIZER/
-├── interactive data visualizer.html   # Main HTML file
-├── interactive data visualizer.png    # App screenshot
-├── README.md                          # You're here!
-🚀 Getting Started
-Clone the repo:
-
-bash
-Copy
-Edit
-git clone https://github.com/Chrisnigel/INTERACTIVE-DATA-VISUALIZER.git
-Open the app:
-
 Just open the interactive data visualizer.html file in your browser—no server or dependencies needed!
 
 🌟 Features to Add (Ideas)
