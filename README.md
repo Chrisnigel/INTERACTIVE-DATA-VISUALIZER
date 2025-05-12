@@ -24,7 +24,7 @@ Just open the interactive data visualizer.html file in your browser—no server 
 🌟 Features to Add (Ideas).
 🗂 Drag & drop file uploads
 
-📤 Export graphs as images or PDFs
+📤 Export graphs as images or PDFs.
 
 🧮 Data cleaning or preview before visualization
 
