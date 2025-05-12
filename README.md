@@ -12,7 +12,7 @@ An intuitive and user-friendly web app that turns raw data into beautiful, inter
 
 💡 Built for Simplicity: Lightweight HTML-based interface with no login required.
 
-🛠️ Tech Stack
+🛠️ Tech Stack==
 Frontend: HTML, CSS, JavaScript
 
 Libraries: Chart.js (or other charting library if used)
