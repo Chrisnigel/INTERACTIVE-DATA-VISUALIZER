@@ -3,7 +3,7 @@ Made by Chrisnigel
 An intuitive and user-friendly web app that turns raw data into beautiful, interactive charts. Ideal for students, analysts, and developers looking to explore datasets visually—no coding needed.
 
 
-🔍 What It Does
+🔍 What It Does.
 📈 Visualizes CSV or JSON Data: Upload your dataset and view it instantly.
 
 🧠 Interactive Charts: Choose from bar charts, line graphs, pie charts, and more.
